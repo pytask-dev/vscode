@@ -37,7 +37,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
+    "lint": "eslint src",
     "test": "node ./out/test/runTest.js",
     "format": "prettier --write \"src/**/*.{ts,js,json,md}\""
   },
@@ -52,7 +52,7 @@
     "chai": "^4.3.7",
     "eslint": "^8.26.0",
     "mocha": "^10.2.0",
-    "typescript": "^5.2.2",
+    "typescript": "~5.3.3",
     "prettier": "^3.2.5"
   },
   "keywords": [],
