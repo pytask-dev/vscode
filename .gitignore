@@ -132,3 +132,6 @@ dist
 # Custom
 .DS_Store
 example/
+
+# Prettier cache
+.prettier*

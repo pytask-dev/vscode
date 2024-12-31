@@ -1,7 +1,7 @@
 {
   "name": "pytask-vscode",
-  "displayName": "PyTask",
-  "description": "VSCode extension for PyTask build system",
+  "displayName": "pytask",
+  "description": "VSCode extension for pytask build system",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.74.0"
@@ -29,7 +29,8 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "format": "prettier --write \"src/**/*.{ts,js,json,md}\""
   },
   "devDependencies": {
     "@types/chai": "^4.3.5",
@@ -42,7 +43,8 @@
     "chai": "^4.3.7",
     "eslint": "^8.26.0",
     "mocha": "^10.2.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "prettier": "^3.2.5"
   },
   "keywords": [],
   "author": "",
