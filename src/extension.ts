@@ -131,7 +131,13 @@ export class TaskItem extends vscode.TreeItem {
 
 export function activate(context: vscode.ExtensionContext) {
   const pytaskProvider = new PyTaskProvider();
-  vscode.window.registerTreeDataProvider('pytaskExplorer', pytaskProvider);
+  const treeView = vscode.window.createTreeView('pytaskExplorer', {
+    treeDataProvider: pytaskProvider,
+    showCollapseAll: true,
+  });
+
+  // Add the tree view to the extension's subscriptions
+  context.subscriptions.push(treeView);
 
   // Register a command to refresh the tree view
   const refreshCommand = vscode.commands.registerCommand('pytask.refresh', () => {

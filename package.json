@@ -14,11 +14,20 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "pytask-explorer",
+          "title": "pytask",
+          "icon": "resources/pytask.svg"
+        }
+      ]
+    },
     "views": {
-      "explorer": [
+      "pytask-explorer": [
         {
           "id": "pytaskExplorer",
-          "name": "pytask"
+          "name": "Tasks"
         }
       ]
     }
