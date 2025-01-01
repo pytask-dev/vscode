@@ -167,12 +167,8 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
 
       // Create module and its tasks
       const content = fs.readFileSync(taskFile.fsPath, 'utf8');
-      const taskFunctions = this.findTaskFunctions(content);
-      const moduleItem = new ModuleItem(
-        fileName,
-        taskFunctions.map((task) => new TaskItem(task.name, taskFile.fsPath, task.lineNumber)),
-        taskFile.fsPath
-      );
+      const taskItems = this.findTaskFunctions(taskFile.fsPath, content);
+      const moduleItem = new ModuleItem(fileName, taskItems, taskFile.fsPath);
 
       // Add module to appropriate folder or root
       if (dirPath === '.') {
@@ -197,35 +193,57 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
       return a.label.localeCompare(b.label);
     });
 
-    // Sort tasks within all modules (including those in folders)
-    const sortModuleTasks = (items: TreeItemType[]) => {
-      items.forEach((item) => {
-        if (item instanceof ModuleItem) {
-          item.children.sort((a, b) => a.label.localeCompare(b.label));
-        } else if (item instanceof FolderItem) {
-          sortModuleTasks(item.children);
-        }
-      });
-    };
-
-    sortModuleTasks(result);
     return result;
   }
 
-  private findTaskFunctions(content: string): TaskDefinition[] {
-    const tasks: TaskDefinition[] = [];
+  private findTaskFunctions(filePath: string, content: string): TaskItem[] {
+    // Find out whether the task decorator is used in the file.
+
+    // Booleans to track if the task decorator is imported as `from pytask import task`
+    // and used as `@task` or `import pytask` and used as `@pytask.task`.
+    let hasPytaskImport = false;
+    let hasTaskImport = false;
+
+    // Match the import statement across the whole file.
+    const fromPytaskImport = content.match(
+      /from\s+pytask\s+import\s+(?:[^,\s]+\s*,\s*)*task(?:\s*,\s*[^,\s]+)*/
+    );
+    const importPytask = content.match(/import\s+pytask\s*$/m);
+
+    hasTaskImport = fromPytaskImport !== null;
+    hasPytaskImport = importPytask !== null;
+
+    // Find the tasks.
+    const tasks: TaskItem[] = [];
     const lines = content.split('\n');
 
+    let isDecorated = false;
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const match = line.match(/def\s+(task_\w+)\s*\(/);
-      if (match) {
-        tasks.push({
-          name: match[1],
-          lineNumber: i + 1,
-        });
+      const line = lines[i].trim();
+
+      // Check for decorators
+      if (line.startsWith('@')) {
+        // Handle both @task and @pytask.task(...) patterns
+        isDecorated =
+          (hasTaskImport && line === '@task') ||
+          (hasPytaskImport && line.startsWith('@pytask.task'));
+        continue;
+      }
+
+      // Check for function definitions
+      const funcMatch = line.match(/^def\s+(\w+)\s*\(/);
+      if (funcMatch) {
+        const funcName = funcMatch[1];
+        // Add if it's a task_* function or has a task decorator
+        if (funcName.startsWith('task_') || isDecorated) {
+          tasks.push(new TaskItem(funcName, filePath, i + 1));
+        }
+        isDecorated = false; // Reset decorator flag
       }
     }
+
+    // Sort the tasks by name.
+    tasks.sort((a, b) => a.label.localeCompare(b.label));
 
     return tasks;
   }
