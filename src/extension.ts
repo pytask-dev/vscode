@@ -48,7 +48,7 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TaskItem> {
 
   async getChildren(element?: TaskItem): Promise<TaskItem[]> {
     if (element) {
-      return [];
+      return element.children;
     }
 
     const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -56,31 +56,53 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TaskItem> {
       return [];
     }
 
-    const tasks: TaskItem[] = [];
+    const moduleMap = new Map<string, TaskItem>();
+
     for (const folder of workspaceFolders) {
       const taskFiles = await vscode.workspace.findFiles(
         new vscode.RelativePattern(folder, '**/task_*.py'),
-        '**/node_modules/**'
+        '{**/node_modules/**,**/.venv/**,**/.git/**,**/.pixi/**,**/venv/**,**/__pycache__/**}'
       );
 
+      // Create module items for all task files
       for (const taskFile of taskFiles) {
+        const fileName = path.basename(taskFile.fsPath);
+        if (!moduleMap.has(fileName)) {
+          moduleMap.set(
+            fileName,
+            new TaskItem(
+              fileName,
+              vscode.TreeItemCollapsibleState.Collapsed,
+              taskFile.fsPath,
+              undefined,
+              [],
+              'module'
+            )
+          );
+        }
+
+        // Add tasks if the file has any
         const content = fs.readFileSync(taskFile.fsPath, 'utf8');
         const taskFunctions = this.findTaskFunctions(content);
+        const moduleItem = moduleMap.get(fileName)!;
 
         for (const task of taskFunctions) {
-          tasks.push(
+          moduleItem.children.push(
             new TaskItem(
               task.name,
               vscode.TreeItemCollapsibleState.None,
               taskFile.fsPath,
-              task.lineNumber
+              task.lineNumber,
+              [],
+              'task'
             )
           );
         }
       }
     }
 
-    return tasks;
+    // Convert map to sorted array
+    return Array.from(moduleMap.values()).sort((a, b) => a.label.localeCompare(b.label));
   }
 
   private findTaskFunctions(content: string): TaskDefinition[] {
@@ -107,25 +129,41 @@ export class TaskItem extends vscode.TreeItem {
     public readonly label: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
     public readonly filePath: string,
-    public readonly lineNumber: number
+    public readonly lineNumber: number | undefined = undefined,
+    public readonly children: TaskItem[] = [],
+    public readonly itemType: 'module' | 'task' = 'task'
   ) {
     super(label, collapsibleState);
-    this.tooltip = `${this.label} - ${path.basename(this.filePath)}:${this.lineNumber}`;
-    this.description = path.basename(this.filePath);
-    this.command = {
-      command: 'vscode.open',
-      title: 'Open Task File',
-      arguments: [
-        vscode.Uri.file(this.filePath),
-        {
-          selection: new vscode.Range(
-            new vscode.Position(this.lineNumber - 1, 0),
-            new vscode.Position(this.lineNumber - 1, 0)
-          ),
-        },
-      ],
-    };
-    this.contextValue = 'task';
+
+    if (itemType === 'task') {
+      this.tooltip = `${this.label} - ${path.basename(this.filePath)}:${this.lineNumber}`;
+      this.description = path.basename(this.filePath);
+      this.command = {
+        command: 'vscode.open',
+        title: 'Open Task File',
+        arguments: [
+          vscode.Uri.file(this.filePath),
+          {
+            selection: new vscode.Range(
+              new vscode.Position(this.lineNumber! - 1, 0),
+              new vscode.Position(this.lineNumber! - 1, 0)
+            ),
+          },
+        ],
+      };
+      this.contextValue = 'task';
+      this.iconPath = new vscode.ThemeIcon('symbol-method');
+    } else {
+      // Module item
+      this.tooltip = this.filePath;
+      this.contextValue = 'module';
+      this.iconPath = new vscode.ThemeIcon('symbol-file');
+      this.command = {
+        command: 'vscode.open',
+        title: 'Open Module File',
+        arguments: [vscode.Uri.file(this.filePath)],
+      };
+    }
   }
 }
 

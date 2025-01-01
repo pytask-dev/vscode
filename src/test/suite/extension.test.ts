@@ -68,16 +68,71 @@ def not_a_task():
       // Get the tree items
       const items = await provider.getChildren();
 
-      // Verify we found the correct number of tasks
-      expect(items.length).to.equal(2, 'Should find exactly 2 tasks');
+      // Verify we found the correct number of modules
+      expect(items.length).to.equal(1, 'Should find exactly 1 module');
+
+      const moduleItem = items[0];
+      expect(moduleItem.contextValue).to.equal('module', 'First item should be a module');
+      expect(moduleItem.label).to.equal('task_test.py', 'Module should have correct name');
+
+      // Verify tasks within the module
+      const tasks = await provider.getChildren(moduleItem);
+      expect(tasks.length).to.equal(2, 'Should find exactly 2 tasks in the module');
 
       // Verify task names
-      const taskNames = items.map((item) => item.label);
+      const taskNames = tasks.map((item) => item.label);
       expect(taskNames).to.include('task_one', 'Should find task_one');
       expect(taskNames).to.include('task_two', 'Should find task_two');
       expect(taskNames).to.not.include('not_a_task', 'Should not find not_a_task');
     } finally {
       treeView.dispose();
+    }
+  });
+
+  test('Should display empty task modules', async function () {
+    this.timeout(10000);
+
+    const wsfolders = vscode.workspace.workspaceFolders;
+    if (!wsfolders) {
+      throw new Error('No workspace folders found');
+    }
+
+    // Create an empty task file
+    const emptyTaskFile = path.join(wsfolders[0].uri.fsPath, 'task_empty.py');
+    fs.writeFileSync(emptyTaskFile, '# Empty task file\n');
+
+    try {
+      const provider = new PyTaskProvider();
+      const treeView = vscode.window.createTreeView('pytaskExplorer', {
+        treeDataProvider: provider,
+      });
+
+      try {
+        // Get the tree items
+        const items = await provider.getChildren();
+
+        // Verify we found both modules (empty and non-empty)
+        expect(items.length).to.equal(2, 'Should find both task modules');
+
+        // Find the empty module
+        const emptyModule = items.find((item) => item.label === 'task_empty.py');
+        expect(emptyModule).to.exist;
+        expect(emptyModule!.contextValue).to.equal(
+          'module',
+          'Empty file should be shown as module'
+        );
+
+        // Verify empty module has no tasks
+        const emptyModuleTasks = await provider.getChildren(emptyModule);
+        expect(emptyModuleTasks.length).to.equal(0, 'Empty module should have no tasks');
+      } finally {
+        treeView.dispose();
+      }
+    } finally {
+      // Clean up empty task file
+      if (fs.existsSync(emptyTaskFile)) {
+        fs.unlinkSync(emptyTaskFile);
+      }
     }
   });
 
@@ -101,9 +156,19 @@ def not_a_task():
     try {
       const items = await provider.getChildren();
 
-      // Verify the new task is included
-      expect(items.length).to.equal(3, 'Should find exactly 3 tasks after adding task_three');
-      const taskNames = items.map((item) => item.label);
+      // Verify we still have one module
+      expect(items.length).to.equal(1, 'Should find exactly 1 module');
+      const moduleItem = items[0];
+      expect(moduleItem.contextValue).to.equal('module', 'First item should be a module');
+
+      // Get tasks under the module
+      const tasks = await provider.getChildren(moduleItem);
+      expect(tasks.length).to.equal(3, 'Should find exactly 3 tasks in the module');
+
+      // Verify task names
+      const taskNames = tasks.map((item) => item.label);
+      expect(taskNames).to.include('task_one', 'Should find task_one');
+      expect(taskNames).to.include('task_two', 'Should find task_two');
       expect(taskNames).to.include('task_three', 'Should find the newly added task_three');
     } finally {
       treeView.dispose();
