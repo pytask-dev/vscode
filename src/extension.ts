@@ -2,11 +2,6 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 
-interface TaskDefinition {
-  name: string;
-  lineNumber: number;
-}
-
 type TreeItemType = FolderItem | ModuleItem | TaskItem;
 
 class FolderItem extends vscode.TreeItem {
@@ -196,22 +191,29 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
     return result;
   }
 
-  private findTaskFunctions(filePath: string, content: string): TaskItem[] {
+  // Made public for testing
+  findTaskFunctions(filePath: string, content: string): TaskItem[] {
     // Find out whether the task decorator is used in the file.
 
     // Booleans to track if the task decorator is imported as `from pytask import task`
     // and used as `@task` or `import pytask` and used as `@pytask.task`.
-    let hasPytaskImport = false;
     let hasTaskImport = false;
+    let pytaskAlias = 'pytask'; // default name, might be aliased
+    let hasPytaskImport = false;
 
     // Match the import statement across the whole file.
     const fromPytaskImport = content.match(
       /from\s+pytask\s+import\s+(?:[^,\s]+\s*,\s*)*task(?:\s*,\s*[^,\s]+)*/
     );
-    const importPytask = content.match(/import\s+pytask\s*$/m);
+    const importPytask = content.match(/import\s+pytask(?:\s+as\s+(\w+))?\s*$/m);
 
     hasTaskImport = fromPytaskImport !== null;
     hasPytaskImport = importPytask !== null;
+
+    if (importPytask) {
+      // If there's an alias (import pytask as something), use it
+      pytaskAlias = importPytask[1] || 'pytask';
+    }
 
     // Find the tasks.
     const tasks: TaskItem[] = [];
@@ -226,7 +228,7 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
         // Handle both @task and @pytask.task(...) patterns
         isDecorated =
           (hasTaskImport && line === '@task') ||
-          (hasPytaskImport && line.startsWith('@pytask.task'));
+          (hasPytaskImport && line.startsWith(`@${pytaskAlias}.task`));
         continue;
       }
 
