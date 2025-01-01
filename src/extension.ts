@@ -126,87 +126,84 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
 
     const rootItems = new Map<string, TreeItemType>();
 
-    for (const folder of workspaceFolders) {
-      const taskFiles = await vscode.workspace.findFiles(
-        new vscode.RelativePattern(folder, '**/task_*.py'),
-        '{**/node_modules/**,**/.venv/**,**/.git/**,**/.pixi/**,**/venv/**,**/__pycache__/**}'
-      );
+    // Get all task modules across the workspace
+    const taskFiles = await vscode.workspace.findFiles(
+      '**/task_*.py',
+      '{**/node_modules/**,**/.venv/**,**/.git/**,**/.pixi/**,**/venv/**,**/__pycache__/**}'
+    );
 
-      for (const taskFile of taskFiles) {
-        const relativePath = path.relative(folder.uri.fsPath, taskFile.fsPath);
-        const dirPath = path.dirname(relativePath);
-        const fileName = path.basename(taskFile.fsPath);
+    // Process each task module
+    for (const taskFile of taskFiles) {
+      const relativePath = path.relative(workspaceFolders[0].uri.fsPath, taskFile.fsPath);
+      const dirPath = path.dirname(relativePath);
+      const fileName = path.basename(taskFile.fsPath);
 
-        // Create folder hierarchy
-        let currentPath = '';
-        let currentItems = rootItems;
-        const pathParts = dirPath.split(path.sep);
+      // Create folder hierarchy
+      let currentPath = '';
+      let currentItems = rootItems;
+      const pathParts = dirPath.split(path.sep);
 
-        // Skip if it's in the root
-        if (dirPath !== '.') {
-          for (const part of pathParts) {
-            currentPath = currentPath ? path.join(currentPath, part) : part;
-            const fullPath = path.join(folder.uri.fsPath, currentPath);
+      // Skip if it's in the root
+      if (dirPath !== '.') {
+        for (const part of pathParts) {
+          currentPath = currentPath ? path.join(currentPath, part) : part;
+          const fullPath = path.join(workspaceFolders[0].uri.fsPath, currentPath);
 
-            if (!currentItems.has(currentPath)) {
-              const newFolder = new FolderItem(part, [], fullPath);
-              currentItems.set(currentPath, newFolder);
-            }
+          if (!currentItems.has(currentPath)) {
+            const newFolder = new FolderItem(part, [], fullPath);
+            currentItems.set(currentPath, newFolder);
+          }
 
-            const folderItem = currentItems.get(currentPath);
-            if (folderItem instanceof FolderItem) {
-              currentItems = new Map(
-                folderItem.children
-                  .filter((child) => child instanceof FolderItem)
-                  .map((child) => [path.basename(child.label), child as FolderItem])
-              );
-            }
+          const folderItem = currentItems.get(currentPath);
+          if (folderItem instanceof FolderItem) {
+            currentItems = new Map(
+              folderItem.children
+                .filter((child) => child instanceof FolderItem)
+                .map((child) => [path.basename(child.label), child as FolderItem])
+            );
           }
         }
+      }
 
-        // Create module and its tasks
-        const content = fs.readFileSync(taskFile.fsPath, 'utf8');
-        const taskFunctions = this.findTaskFunctions(content);
-        const moduleItem = new ModuleItem(
-          fileName,
-          taskFunctions.map((task) => new TaskItem(task.name, taskFile.fsPath, task.lineNumber)),
-          taskFile.fsPath
-        );
+      // Create module and its tasks
+      const content = fs.readFileSync(taskFile.fsPath, 'utf8');
+      const taskFunctions = this.findTaskFunctions(content);
+      const moduleItem = new ModuleItem(
+        fileName,
+        taskFunctions.map((task) => new TaskItem(task.name, taskFile.fsPath, task.lineNumber)),
+        taskFile.fsPath
+      );
 
-        // Add module to appropriate folder or root
-        if (dirPath === '.') {
-          rootItems.set(fileName, moduleItem);
-        } else {
-          const parentFolder = rootItems.get(dirPath);
-          if (parentFolder instanceof FolderItem) {
-            parentFolder.children.push(moduleItem);
-          }
+      // Add module to appropriate folder or root
+      if (dirPath === '.') {
+        rootItems.set(fileName, moduleItem);
+      } else {
+        const parentFolder = rootItems.get(dirPath);
+        if (parentFolder instanceof FolderItem) {
+          parentFolder.children.push(moduleItem);
         }
       }
     }
 
     // Sort everything
-    const sortItems = (items: TreeItemType[]) => {
-      items.sort((a, b) => {
-        // Folders come before modules
-        if (a instanceof FolderItem && !(b instanceof FolderItem)) return -1;
-        if (!(a instanceof FolderItem) && b instanceof FolderItem) return 1;
-        // Alphabetical sort within same type
-        return a.label.localeCompare(b.label);
-      });
-
-      // Sort children recursively
-      items.forEach((item) => {
-        if (item instanceof FolderItem) {
-          sortItems(item.children);
-        } else if (item instanceof ModuleItem) {
-          item.children.sort((a, b) => a.label.localeCompare(b.label));
-        }
-      });
-    };
-
     const result = Array.from(rootItems.values());
-    sortItems(result);
+
+    // Sort folders and modules
+    result.sort((a, b) => {
+      // Folders come before modules
+      if (a instanceof FolderItem && !(b instanceof FolderItem)) return -1;
+      if (!(a instanceof FolderItem) && b instanceof FolderItem) return 1;
+      // Alphabetical sort within same type
+      return a.label.localeCompare(b.label);
+    });
+
+    // Sort tasks within modules
+    result.forEach((item) => {
+      if (item instanceof ModuleItem) {
+        item.children.sort((a, b) => a.label.localeCompare(b.label));
+      }
+    });
+
     return result;
   }
 
