@@ -197,13 +197,18 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
       return a.label.localeCompare(b.label);
     });
 
-    // Sort tasks within modules
-    result.forEach((item) => {
-      if (item instanceof ModuleItem) {
-        item.children.sort((a, b) => a.label.localeCompare(b.label));
-      }
-    });
+    // Sort tasks within all modules (including those in folders)
+    const sortModuleTasks = (items: TreeItemType[]) => {
+      items.forEach((item) => {
+        if (item instanceof ModuleItem) {
+          item.children.sort((a, b) => a.label.localeCompare(b.label));
+        } else if (item instanceof FolderItem) {
+          sortModuleTasks(item.children);
+        }
+      });
+    };
 
+    sortModuleTasks(result);
     return result;
   }
 
