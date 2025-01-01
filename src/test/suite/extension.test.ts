@@ -7,7 +7,7 @@ import { PyTaskProvider } from '../../extension';
 
 suite('PyTask Extension Test Suite', function () {
   // Increase timeout for all tests
-  this.timeout(10000);
+  this.timeout(5000);
 
   let testFilePath: string;
 
@@ -40,7 +40,6 @@ def not_a_task():
   });
 
   teardown(function () {
-    this.timeout(5000);
     // Clean up test file after each test
     if (fs.existsSync(testFilePath)) {
       fs.unlinkSync(testFilePath);
@@ -48,7 +47,6 @@ def not_a_task():
   });
 
   test('Extension should be present', async function () {
-    this.timeout(5000);
     const extension = vscode.extensions.getExtension('undefined_publisher.pytask-vscode');
     assert.ok(extension, 'Extension should be present');
     await extension?.activate();
@@ -167,205 +165,205 @@ def not_a_task():
       treeView.dispose();
     }
   });
+});
 
-  suite('Task Function Detection', () => {
-    const provider = new PyTaskProvider();
-    const dummyPath = '/test/task_test.py';
+suite('Task Function Detection', () => {
+  const provider = new PyTaskProvider();
+  const dummyPath = '/test/task_test.py';
 
-    test('Should find functions with task_ prefix', () => {
-      const content = `
+  test('Should find functions with task_ prefix', () => {
+    const content = `
 def task_one():
-    pass
+  pass
 
 def task_two():
-    pass
+  pass
 
 def not_a_task():
-    pass
+  pass
 `;
-      const tasks = provider.findTaskFunctions(dummyPath, content);
-      expect(tasks).to.have.lengthOf(2, 'Should find exactly 2 tasks');
-      expect(tasks[0].label).to.equal('task_one');
-      expect(tasks[1].label).to.equal('task_two');
-    });
+    const tasks = provider.findTaskFunctions(dummyPath, content);
+    expect(tasks).to.have.lengthOf(2, 'Should find exactly 2 tasks');
+    expect(tasks[0].label).to.equal('task_one');
+    expect(tasks[1].label).to.equal('task_two');
+  });
 
-    test('Should find functions with @task decorator', () => {
-      const content = `
+  test('Should find functions with @task decorator', () => {
+    const content = `
 from pytask import task
 
 @task
 def function_one():
-    pass
+  pass
 
 @task
 def another_function():
-    pass
+  pass
 
 def not_decorated():
-    pass
+  pass
 `;
-      const tasks = provider.findTaskFunctions(dummyPath, content);
-      expect(tasks).to.have.lengthOf(2, 'Should find exactly 2 tasks');
-      expect(tasks[0].label).to.equal('another_function');
-      expect(tasks[1].label).to.equal('function_one');
-    });
+    const tasks = provider.findTaskFunctions(dummyPath, content);
+    expect(tasks).to.have.lengthOf(2, 'Should find exactly 2 tasks');
+    expect(tasks[0].label).to.equal('another_function');
+    expect(tasks[1].label).to.equal('function_one');
+  });
 
-    test('Should find functions with @pytask.task decorator', () => {
-      const content = `
+  test('Should find functions with @pytask.task decorator', () => {
+    const content = `
 import pytask
 
 @pytask.task
 def function_one():
-    pass
+  pass
 
 @pytask.task()
 def function_two():
-    pass
+  pass
 
 @pytask.task(...)
 def function_three():
-    pass
+  pass
 `;
-      const tasks = provider.findTaskFunctions(dummyPath, content);
-      expect(tasks).to.have.lengthOf(3, 'Should find exactly 3 tasks');
-      expect(tasks[0].label).to.equal('function_one');
-      expect(tasks[1].label).to.equal('function_three');
-      expect(tasks[2].label).to.equal('function_two');
-    });
+    const tasks = provider.findTaskFunctions(dummyPath, content);
+    expect(tasks).to.have.lengthOf(3, 'Should find exactly 3 tasks');
+    expect(tasks[0].label).to.equal('function_one');
+    expect(tasks[1].label).to.equal('function_three');
+    expect(tasks[2].label).to.equal('function_two');
+  });
 
-    test('Should handle mixed task definitions', () => {
-      const content = `
+  test('Should handle mixed task definitions', () => {
+    const content = `
 from pytask import task
 import pytask
 
 def task_one():
-    pass
+  pass
 
 @task
 def function_two():
-    pass
+  pass
 
 @pytask.task
 def function_three():
-    pass
+  pass
 
 def not_a_task():
-    pass
+  pass
 `;
-      const tasks = provider.findTaskFunctions(dummyPath, content);
-      expect(tasks).to.have.lengthOf(3, 'Should find exactly 3 tasks');
-      expect(tasks[0].label).to.equal('function_three');
-      expect(tasks[1].label).to.equal('function_two');
-      expect(tasks[2].label).to.equal('task_one');
-    });
+    const tasks = provider.findTaskFunctions(dummyPath, content);
+    expect(tasks).to.have.lengthOf(3, 'Should find exactly 3 tasks');
+    expect(tasks[0].label).to.equal('function_three');
+    expect(tasks[1].label).to.equal('function_two');
+    expect(tasks[2].label).to.equal('task_one');
+  });
 
-    test('Should not find tasks without proper imports', () => {
-      const content = `
+  test('Should not find tasks without proper imports', () => {
+    const content = `
 # Missing imports
 
 @task
 def not_a_task1():
-    pass
+  pass
 
 @pytask.task
 def not_a_task2():
-    pass
+  pass
 
 def task_one():
-    pass
+  pass
 `;
-      const tasks = provider.findTaskFunctions(dummyPath, content);
-      expect(tasks).to.have.lengthOf(1, 'Should only find the task_ prefixed function');
-      expect(tasks[0].label).to.equal('task_one');
-    });
+    const tasks = provider.findTaskFunctions(dummyPath, content);
+    expect(tasks).to.have.lengthOf(1, 'Should only find the task_ prefixed function');
+    expect(tasks[0].label).to.equal('task_one');
+  });
 
-    test('Should handle complex import statements', () => {
-      const content = `
+  test('Should handle complex import statements', () => {
+    const content = `
 from pytask import clean, task, collect
 import pytask as pt
 
 @task
 def task_one():
-    pass
+  pass
 
 @pt.task
 def another_task():
-    pass
+  pass
 `;
-      const tasks = provider.findTaskFunctions(dummyPath, content);
-      expect(tasks).to.have.lengthOf(2, 'Should find both tasks');
-      expect(tasks[0].label).to.equal('another_task');
-      expect(tasks[1].label).to.equal('task_one');
-    });
+    const tasks = provider.findTaskFunctions(dummyPath, content);
+    expect(tasks).to.have.lengthOf(2, 'Should find both tasks');
+    expect(tasks[0].label).to.equal('another_task');
+    expect(tasks[1].label).to.equal('task_one');
+  });
 
-    test('Should handle aliased task import', () => {
-      const content = `
+  test('Should handle aliased task import', () => {
+    const content = `
 from pytask import task as t
 
 @t
 def my_task():
-    pass
+  pass
 
 def not_a_task():
-    pass
+  pass
 `;
-      const tasks = provider.findTaskFunctions(dummyPath, content);
-      expect(tasks).to.have.lengthOf(1, 'Should find task with aliased decorator');
-      expect(tasks[0].label).to.equal('my_task');
-    });
+    const tasks = provider.findTaskFunctions(dummyPath, content);
+    expect(tasks).to.have.lengthOf(1, 'Should find task with aliased decorator');
+    expect(tasks[0].label).to.equal('my_task');
+  });
 
-    test('Should handle multi-import statements', () => {
-      const content = `
+  test('Should handle multi-import statements', () => {
+    const content = `
 from pytask import Product, task
 
 @task
 def task_one():
-    pass
+  pass
 
 def not_a_task():
-    pass
+  pass
 `;
-      const tasks = provider.findTaskFunctions(dummyPath, content);
-      expect(tasks).to.have.lengthOf(1, 'Should find task with multi-import');
-      expect(tasks[0].label).to.equal('task_one');
-    });
+    const tasks = provider.findTaskFunctions(dummyPath, content);
+    expect(tasks).to.have.lengthOf(1, 'Should find task with multi-import');
+    expect(tasks[0].label).to.equal('task_one');
+  });
 
-    test('Should handle multi-line import statements', () => {
-      const content = `
+  test('Should handle multi-line import statements', () => {
+    const content = `
 from pytask import (
-    Product,
-    task,
+  Product,
+  task,
 )
 
 @task
 def task_one():
-    pass
+  pass
 
 def not_a_task():
-    pass
+  pass
 `;
-      const tasks = provider.findTaskFunctions(dummyPath, content);
-      expect(tasks).to.have.lengthOf(1, 'Should find task with multi-line import');
-      expect(tasks[0].label).to.equal('task_one');
-    });
+    const tasks = provider.findTaskFunctions(dummyPath, content);
+    expect(tasks).to.have.lengthOf(1, 'Should find task with multi-line import');
+    expect(tasks[0].label).to.equal('task_one');
+  });
 
-    test('Should set correct line numbers', () => {
-      const content = `
+  test('Should set correct line numbers', () => {
+    const content = `
 from pytask import task
 
 def task_one():  # line 4
-    pass
+  pass
 
 @task
 def decorated_task():  # line 8
-    pass
+  pass
 `;
-      const tasks = provider.findTaskFunctions(dummyPath, content);
-      expect(tasks).to.have.lengthOf(2, 'Should find both tasks');
-      expect(tasks[0].label).to.equal('decorated_task');
-      expect(tasks[0].lineNumber).to.equal(8);
-      expect(tasks[1].label).to.equal('task_one');
-      expect(tasks[1].lineNumber).to.equal(4);
-    });
+    const tasks = provider.findTaskFunctions(dummyPath, content);
+    expect(tasks).to.have.lengthOf(2, 'Should find both tasks');
+    expect(tasks[0].label).to.equal('decorated_task');
+    expect(tasks[0].lineNumber).to.equal(8);
+    expect(tasks[1].label).to.equal('task_one');
+    expect(tasks[1].lineNumber).to.equal(4);
   });
 });
