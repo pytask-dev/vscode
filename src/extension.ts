@@ -198,19 +198,30 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
     // Booleans to track if the task decorator is imported as `from pytask import task`
     // and used as `@task` or `import pytask` and used as `@pytask.task`.
     let hasTaskImport = false;
-    let pytaskAlias = 'pytask'; // default name, might be aliased
+    let taskAlias = 'task'; // default name for 'from pytask import task'
+    let pytaskAlias = 'pytask'; // default name for 'import pytask'
     let hasPytaskImport = false;
 
-    // Match the import statement across the whole file.
+    // Match the import statements
+    // Handle various import patterns:
+    // - from pytask import task
+    // - from pytask import task as t
+    // - from pytask import Product, task
+    // - from pytask import (Product, task)
     const fromPytaskImport = content.match(
-      /from\s+pytask\s+import\s+(?:[^,\s]+\s*,\s*)*task(?:\s*,\s*[^,\s]+)*/
+      /from\s+pytask\s+import\s+(?:\(?\s*(?:[\w]+\s*,\s*)*task(?:\s+as\s+(\w+))?(?:\s*,\s*[\w]+)*\s*\)?)/
     );
     const importPytask = content.match(/import\s+pytask(?:\s+as\s+(\w+))?\s*$/m);
 
-    hasTaskImport = fromPytaskImport !== null;
-    hasPytaskImport = importPytask !== null;
+    if (fromPytaskImport) {
+      hasTaskImport = true;
+      if (fromPytaskImport[1]) {
+        taskAlias = fromPytaskImport[1];
+      }
+    }
 
     if (importPytask) {
+      hasPytaskImport = true;
       // If there's an alias (import pytask as something), use it
       pytaskAlias = importPytask[1] || 'pytask';
     }
@@ -227,7 +238,7 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
       if (line.startsWith('@')) {
         // Handle both @task and @pytask.task(...) patterns
         isDecorated =
-          (hasTaskImport && line === '@task') ||
+          (hasTaskImport && line === `@${taskAlias}`) ||
           (hasPytaskImport && line.startsWith(`@${pytaskAlias}.task`));
         continue;
       }

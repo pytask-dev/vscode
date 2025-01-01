@@ -305,6 +305,57 @@ def another_task():
       expect(tasks[1].label).to.equal('task_one');
     });
 
+    test('Should handle aliased task import', () => {
+      const content = `
+from pytask import task as t
+
+@t
+def my_task():
+    pass
+
+def not_a_task():
+    pass
+`;
+      const tasks = provider.findTaskFunctions(dummyPath, content);
+      expect(tasks).to.have.lengthOf(1, 'Should find task with aliased decorator');
+      expect(tasks[0].label).to.equal('my_task');
+    });
+
+    test('Should handle multi-import statements', () => {
+      const content = `
+from pytask import Product, task
+
+@task
+def task_one():
+    pass
+
+def not_a_task():
+    pass
+`;
+      const tasks = provider.findTaskFunctions(dummyPath, content);
+      expect(tasks).to.have.lengthOf(1, 'Should find task with multi-import');
+      expect(tasks[0].label).to.equal('task_one');
+    });
+
+    test('Should handle multi-line import statements', () => {
+      const content = `
+from pytask import (
+    Product,
+    task,
+)
+
+@task
+def task_one():
+    pass
+
+def not_a_task():
+    pass
+`;
+      const tasks = provider.findTaskFunctions(dummyPath, content);
+      expect(tasks).to.have.lengthOf(1, 'Should find task with multi-line import');
+      expect(tasks[0].label).to.equal('task_one');
+    });
+
     test('Should set correct line numbers', () => {
       const content = `
 from pytask import task
