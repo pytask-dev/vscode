@@ -1,0 +1,2 @@
+[tool.yamlfix]
+section_whitelines = 1
