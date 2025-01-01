@@ -21,7 +21,6 @@ suite('PyTask Extension Test Suite', function () {
 
   setup(async function () {
     // Increase timeout for setup
-    this.timeout(10000);
 
     // Create a test task file before each test
     const testFileContent = `
@@ -56,8 +55,6 @@ def not_a_task():
   });
 
   test('Should find task functions in Python files', async function () {
-    this.timeout(10000);
-
     // Get the PyTask explorer view
     const provider = new PyTaskProvider();
     const treeView = vscode.window.createTreeView('pytaskExplorer', {
@@ -90,8 +87,6 @@ def not_a_task():
   });
 
   test('Should display empty task modules', async function () {
-    this.timeout(10000);
-
     const wsfolders = vscode.workspace.workspaceFolders;
     if (!wsfolders) {
       throw new Error('No workspace folders found');
@@ -137,8 +132,6 @@ def not_a_task():
   });
 
   test('Should update when task file changes', async function () {
-    this.timeout(10000);
-
     // Add a new task to the file
     const updatedContent =
       fs.readFileSync(testFilePath, 'utf8') + '\ndef task_three():\n    pass\n';

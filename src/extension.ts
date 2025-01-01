@@ -191,7 +191,6 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
     return result;
   }
 
-  // Made public for testing
   findTaskFunctions(filePath: string, content: string): TaskItem[] {
     // Find out whether the task decorator is used in the file.
 
