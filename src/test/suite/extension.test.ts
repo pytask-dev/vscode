@@ -34,9 +34,6 @@ def not_a_task():
     pass
 `;
     fs.writeFileSync(testFilePath, testFileContent);
-
-    // Wait for the extension to activate and file to be indexed
-    await new Promise((resolve) => setTimeout(resolve, 3000));
   });
 
   teardown(function () {
