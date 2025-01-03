@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { expect } from 'chai';
-import { PyTaskProvider } from '../../extension';
+import { PyTaskProvider } from '../../providers/taskProvider';
 
 suite('PyTask Extension Test Suite', function () {
   // Increase timeout for all tests
@@ -72,7 +72,7 @@ def not_a_task():
       expect(tasks.length).to.equal(2, 'Should find exactly 2 tasks in the module');
 
       // Verify task names
-      const taskNames = tasks.map((item) => item.label);
+      const taskNames = tasks.map((item: vscode.TreeItem) => item.label);
       expect(taskNames).to.include('task_one', 'Should find task_one');
       expect(taskNames).to.include('task_two', 'Should find task_two');
       expect(taskNames).to.not.include('not_a_task', 'Should not find not_a_task');
@@ -105,7 +105,7 @@ def not_a_task():
         expect(items.length).to.equal(2, 'Should find both task modules');
 
         // Find the empty module
-        const emptyModule = items.find((item) => item.label === 'task_empty.py');
+        const emptyModule = items.find((item: vscode.TreeItem) => item.label === 'task_empty.py');
         expect(emptyModule).to.exist;
         expect(emptyModule!.contextValue).to.equal(
           'module',
@@ -154,7 +154,7 @@ def not_a_task():
       expect(tasks.length).to.equal(3, 'Should find exactly 3 tasks in the module');
 
       // Verify task names
-      const taskNames = tasks.map((item) => item.label);
+      const taskNames = tasks.map((item: vscode.TreeItem) => item.label);
       expect(taskNames).to.include('task_one', 'Should find task_one');
       expect(taskNames).to.include('task_two', 'Should find task_two');
       expect(taskNames).to.include('task_three', 'Should find the newly added task_three');
