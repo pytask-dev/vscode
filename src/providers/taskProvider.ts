@@ -8,7 +8,7 @@ class FolderItem extends vscode.TreeItem {
   constructor(
     public readonly label: string,
     public readonly children: (FolderItem | ModuleItem)[] = [],
-    public readonly folderPath: string,
+    public readonly folderPath: string
   ) {
     super(label, vscode.TreeItemCollapsibleState.Expanded);
     this.contextValue = "folder";
@@ -21,7 +21,7 @@ class ModuleItem extends vscode.TreeItem {
   constructor(
     public readonly label: string,
     public readonly children: TaskItem[] = [],
-    public readonly filePath: string,
+    public readonly filePath: string
   ) {
     super(label, vscode.TreeItemCollapsibleState.Collapsed);
     this.contextValue = "module";
@@ -39,7 +39,7 @@ class TaskItem extends vscode.TreeItem {
   constructor(
     public readonly label: string,
     public readonly filePath: string,
-    public readonly lineNumber: number,
+    public readonly lineNumber: number
   ) {
     super(label, vscode.TreeItemCollapsibleState.None);
     this.contextValue = "task";
@@ -54,7 +54,7 @@ class TaskItem extends vscode.TreeItem {
         {
           selection: new vscode.Range(
             new vscode.Position(this.lineNumber - 1, 0),
-            new vscode.Position(this.lineNumber - 1, 0),
+            new vscode.Position(this.lineNumber - 1, 0)
           ),
         },
       ],
@@ -63,17 +63,14 @@ class TaskItem extends vscode.TreeItem {
 }
 
 export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
-  private _onDidChangeTreeData: vscode.EventEmitter<
-    TreeItemType | undefined | null | void
-  > = new vscode.EventEmitter<TreeItemType | undefined | null | void>();
-  readonly onDidChangeTreeData: vscode.Event<
-    TreeItemType | undefined | null | void
-  > = this._onDidChangeTreeData.event;
+  private _onDidChangeTreeData: vscode.EventEmitter<TreeItemType | undefined | null | void> =
+    new vscode.EventEmitter<TreeItemType | undefined | null | void>();
+  readonly onDidChangeTreeData: vscode.Event<TreeItemType | undefined | null | void> =
+    this._onDidChangeTreeData.event;
   private fileSystemWatcher: vscode.FileSystemWatcher;
 
   constructor() {
-    this.fileSystemWatcher =
-      vscode.workspace.createFileSystemWatcher("**/task_*.py");
+    this.fileSystemWatcher = vscode.workspace.createFileSystemWatcher("**/task_*.py");
 
     this.fileSystemWatcher.onDidCreate(() => {
       this.refresh();
@@ -127,15 +124,12 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
     // Get all task modules across the workspace
     const taskFiles = await vscode.workspace.findFiles(
       "**/task_*.py",
-      "{**/node_modules/**,**/.venv/**,**/.git/**,**/.pixi/**,**/venv/**,**/__pycache__/**}",
+      "{**/node_modules/**,**/.venv/**,**/.git/**,**/.pixi/**,**/venv/**,**/__pycache__/**}"
     );
 
     // Process each task module
     for (const taskFile of taskFiles) {
-      const relativePath = path.relative(
-        workspaceFolders[0].uri.fsPath,
-        taskFile.fsPath,
-      );
+      const relativePath = path.relative(workspaceFolders[0].uri.fsPath, taskFile.fsPath);
       const dirPath = path.dirname(relativePath);
       const fileName = path.basename(taskFile.fsPath);
 
@@ -148,10 +142,7 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
       if (dirPath !== ".") {
         for (const part of pathParts) {
           currentPath = currentPath ? path.join(currentPath, part) : part;
-          const fullPath = path.join(
-            workspaceFolders[0].uri.fsPath,
-            currentPath,
-          );
+          const fullPath = path.join(workspaceFolders[0].uri.fsPath, currentPath);
 
           if (!currentItems.has(currentPath)) {
             const newFolder = new FolderItem(part, [], fullPath);
@@ -163,10 +154,7 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
             currentItems = new Map(
               folderItem.children
                 .filter((child) => child instanceof FolderItem)
-                .map((child) => [
-                  path.basename(child.label),
-                  child as FolderItem,
-                ]),
+                .map((child) => [path.basename(child.label), child as FolderItem])
             );
           }
         }
@@ -220,11 +208,9 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
     // - from pytask import Product, task
     // - from pytask import (Product, task)
     const fromPytaskImport = content.match(
-      /from\s+pytask\s+import\s+(?:\(?\s*(?:[\w]+\s*,\s*)*task(?:\s+as\s+(\w+))?(?:\s*,\s*[\w]+)*\s*\)?)/,
+      /from\s+pytask\s+import\s+(?:\(?\s*(?:[\w]+\s*,\s*)*task(?:\s+as\s+(\w+))?(?:\s*,\s*[\w]+)*\s*\)?)/
     );
-    const importPytask = content.match(
-      /import\s+pytask(?:\s+as\s+(\w+))?\s*$/m,
-    );
+    const importPytask = content.match(/import\s+pytask(?:\s+as\s+(\w+))?\s*$/m);
 
     if (fromPytaskImport) {
       hasTaskImport = true;
@@ -275,9 +261,7 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
   }
 }
 
-export function activate(
-  context: vscode.ExtensionContext,
-): vscode.TreeView<TreeItemType> {
+export function activate(context: vscode.ExtensionContext): vscode.TreeView<TreeItemType> {
   const pytaskProvider = new PyTaskProvider();
   const treeView = vscode.window.createTreeView("pytaskExplorer", {
     treeDataProvider: pytaskProvider,
@@ -286,12 +270,9 @@ export function activate(
 
   context.subscriptions.push(treeView);
 
-  const refreshCommand = vscode.commands.registerCommand(
-    "pytask.refresh",
-    () => {
-      pytaskProvider.refresh();
-    },
-  );
+  const refreshCommand = vscode.commands.registerCommand("pytask.refresh", () => {
+    pytaskProvider.refresh();
+  });
 
   context.subscriptions.push(refreshCommand, pytaskProvider);
 

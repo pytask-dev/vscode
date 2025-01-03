@@ -8,7 +8,7 @@ async function main() {
     // Create a temporary test workspace
     const testWorkspacePath = path.join(
       os.tmpdir(),
-      `pytask-test-${Math.random().toString(36).substring(2)}`,
+      `pytask-test-${Math.random().toString(36).substring(2)}`
     );
     fs.mkdirSync(testWorkspacePath, { recursive: true });
     console.log(`Test workspace created at: ${testWorkspacePath}`);

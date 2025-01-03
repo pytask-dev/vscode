@@ -44,9 +44,7 @@ def not_a_task():
   });
 
   test("Extension should be present", async function () {
-    const extension = vscode.extensions.getExtension(
-      "undefined_publisher.pytask-vscode",
-    );
+    const extension = vscode.extensions.getExtension("undefined_publisher.pytask-vscode");
     assert.ok(extension, "Extension should be present");
     await extension?.activate();
   });
@@ -66,30 +64,18 @@ def not_a_task():
       expect(items.length).to.equal(1, "Should find exactly 1 module");
 
       const moduleItem = items[0];
-      expect(moduleItem.contextValue).to.equal(
-        "module",
-        "First item should be a module",
-      );
-      expect(moduleItem.label).to.equal(
-        "task_test.py",
-        "Module should have correct name",
-      );
+      expect(moduleItem.contextValue).to.equal("module", "First item should be a module");
+      expect(moduleItem.label).to.equal("task_test.py", "Module should have correct name");
 
       // Verify tasks within the module
       const tasks = await provider.getChildren(moduleItem);
-      expect(tasks.length).to.equal(
-        2,
-        "Should find exactly 2 tasks in the module",
-      );
+      expect(tasks.length).to.equal(2, "Should find exactly 2 tasks in the module");
 
       // Verify task names
       const taskNames = tasks.map((item: vscode.TreeItem) => item.label);
       expect(taskNames).to.include("task_one", "Should find task_one");
       expect(taskNames).to.include("task_two", "Should find task_two");
-      expect(taskNames).to.not.include(
-        "not_a_task",
-        "Should not find not_a_task",
-      );
+      expect(taskNames).to.not.include("not_a_task", "Should not find not_a_task");
     } finally {
       treeView.dispose();
     }
@@ -119,21 +105,16 @@ def not_a_task():
         expect(items.length).to.equal(2, "Should find both task modules");
 
         // Find the empty module
-        const emptyModule = items.find(
-          (item: vscode.TreeItem) => item.label === "task_empty.py",
-        );
+        const emptyModule = items.find((item: vscode.TreeItem) => item.label === "task_empty.py");
         expect(emptyModule).to.exist;
         expect(emptyModule!.contextValue).to.equal(
           "module",
-          "Empty file should be shown as module",
+          "Empty file should be shown as module"
         );
 
         // Verify empty module has no tasks
         const emptyModuleTasks = await provider.getChildren(emptyModule);
-        expect(emptyModuleTasks.length).to.equal(
-          0,
-          "Empty module should have no tasks",
-        );
+        expect(emptyModuleTasks.length).to.equal(0, "Empty module should have no tasks");
       } finally {
         treeView.dispose();
       }
@@ -166,26 +147,17 @@ def not_a_task():
       // Verify we still have one module
       expect(items.length).to.equal(1, "Should find exactly 1 module");
       const moduleItem = items[0];
-      expect(moduleItem.contextValue).to.equal(
-        "module",
-        "First item should be a module",
-      );
+      expect(moduleItem.contextValue).to.equal("module", "First item should be a module");
 
       // Get tasks under the module
       const tasks = await provider.getChildren(moduleItem);
-      expect(tasks.length).to.equal(
-        3,
-        "Should find exactly 3 tasks in the module",
-      );
+      expect(tasks.length).to.equal(3, "Should find exactly 3 tasks in the module");
 
       // Verify task names
       const taskNames = tasks.map((item: vscode.TreeItem) => item.label);
       expect(taskNames).to.include("task_one", "Should find task_one");
       expect(taskNames).to.include("task_two", "Should find task_two");
-      expect(taskNames).to.include(
-        "task_three",
-        "Should find the newly added task_three",
-      );
+      expect(taskNames).to.include("task_three", "Should find the newly added task_three");
     } finally {
       treeView.dispose();
     }
@@ -299,10 +271,7 @@ def task_one():
   pass
 `;
     const tasks = provider.findTaskFunctions(dummyPath, content);
-    expect(tasks).to.have.lengthOf(
-      1,
-      "Should only find the task_ prefixed function",
-    );
+    expect(tasks).to.have.lengthOf(1, "Should only find the task_ prefixed function");
     expect(tasks[0].label).to.equal("task_one");
   });
 
@@ -337,10 +306,7 @@ def not_a_task():
   pass
 `;
     const tasks = provider.findTaskFunctions(dummyPath, content);
-    expect(tasks).to.have.lengthOf(
-      1,
-      "Should find task with aliased decorator",
-    );
+    expect(tasks).to.have.lengthOf(1, "Should find task with aliased decorator");
     expect(tasks[0].label).to.equal("my_task");
   });
 
@@ -375,10 +341,7 @@ def not_a_task():
   pass
 `;
     const tasks = provider.findTaskFunctions(dummyPath, content);
-    expect(tasks).to.have.lengthOf(
-      1,
-      "Should find task with multi-line import",
-    );
+    expect(tasks).to.have.lengthOf(1, "Should find task with multi-line import");
     expect(tasks[0].label).to.equal("task_one");
   });
 

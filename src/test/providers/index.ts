@@ -14,9 +14,7 @@ export function run(): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
       // Get all test files
-      const files = fs
-        .readdirSync(testsRoot)
-        .filter((file) => file.endsWith(".test.js"));
+      const files = fs.readdirSync(testsRoot).filter((file) => file.endsWith(".test.js"));
 
       // Add files to the test suite
       files.forEach((f) => mocha.addFile(path.resolve(testsRoot, f)));
