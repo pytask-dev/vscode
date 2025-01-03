@@ -1,6 +1,6 @@
-import * as vscode from 'vscode';
-import * as path from 'path';
-import * as fs from 'fs';
+import * as vscode from "vscode";
+import * as path from "path";
+import * as fs from "fs";
 
 type TreeItemType = FolderItem | ModuleItem | TaskItem;
 
@@ -8,11 +8,11 @@ class FolderItem extends vscode.TreeItem {
   constructor(
     public readonly label: string,
     public readonly children: (FolderItem | ModuleItem)[] = [],
-    public readonly folderPath: string
+    public readonly folderPath: string,
   ) {
     super(label, vscode.TreeItemCollapsibleState.Expanded);
-    this.contextValue = 'folder';
-    this.iconPath = new vscode.ThemeIcon('folder');
+    this.contextValue = "folder";
+    this.iconPath = new vscode.ThemeIcon("folder");
     this.tooltip = folderPath;
   }
 }
@@ -21,15 +21,15 @@ class ModuleItem extends vscode.TreeItem {
   constructor(
     public readonly label: string,
     public readonly children: TaskItem[] = [],
-    public readonly filePath: string
+    public readonly filePath: string,
   ) {
     super(label, vscode.TreeItemCollapsibleState.Collapsed);
-    this.contextValue = 'module';
-    this.iconPath = new vscode.ThemeIcon('symbol-file');
+    this.contextValue = "module";
+    this.iconPath = new vscode.ThemeIcon("symbol-file");
     this.tooltip = filePath;
     this.command = {
-      command: 'vscode.open',
-      title: 'Open Module File',
+      command: "vscode.open",
+      title: "Open Module File",
       arguments: [vscode.Uri.file(filePath)],
     };
   }
@@ -39,22 +39,22 @@ class TaskItem extends vscode.TreeItem {
   constructor(
     public readonly label: string,
     public readonly filePath: string,
-    public readonly lineNumber: number
+    public readonly lineNumber: number,
   ) {
     super(label, vscode.TreeItemCollapsibleState.None);
-    this.contextValue = 'task';
-    this.iconPath = new vscode.ThemeIcon('symbol-method');
+    this.contextValue = "task";
+    this.iconPath = new vscode.ThemeIcon("symbol-method");
     this.tooltip = `${this.label} - ${path.basename(this.filePath)}:${this.lineNumber}`;
     this.description = path.basename(this.filePath);
     this.command = {
-      command: 'vscode.open',
-      title: 'Open Task File',
+      command: "vscode.open",
+      title: "Open Task File",
       arguments: [
         vscode.Uri.file(this.filePath),
         {
           selection: new vscode.Range(
             new vscode.Position(this.lineNumber - 1, 0),
-            new vscode.Position(this.lineNumber - 1, 0)
+            new vscode.Position(this.lineNumber - 1, 0),
           ),
         },
       ],
@@ -63,14 +63,17 @@ class TaskItem extends vscode.TreeItem {
 }
 
 export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
-  private _onDidChangeTreeData: vscode.EventEmitter<TreeItemType | undefined | null | void> =
-    new vscode.EventEmitter<TreeItemType | undefined | null | void>();
-  readonly onDidChangeTreeData: vscode.Event<TreeItemType | undefined | null | void> =
-    this._onDidChangeTreeData.event;
+  private _onDidChangeTreeData: vscode.EventEmitter<
+    TreeItemType | undefined | null | void
+  > = new vscode.EventEmitter<TreeItemType | undefined | null | void>();
+  readonly onDidChangeTreeData: vscode.Event<
+    TreeItemType | undefined | null | void
+  > = this._onDidChangeTreeData.event;
   private fileSystemWatcher: vscode.FileSystemWatcher;
 
   constructor() {
-    this.fileSystemWatcher = vscode.workspace.createFileSystemWatcher('**/task_*.py');
+    this.fileSystemWatcher =
+      vscode.workspace.createFileSystemWatcher("**/task_*.py");
 
     this.fileSystemWatcher.onDidCreate(() => {
       this.refresh();
@@ -123,26 +126,32 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
 
     // Get all task modules across the workspace
     const taskFiles = await vscode.workspace.findFiles(
-      '**/task_*.py',
-      '{**/node_modules/**,**/.venv/**,**/.git/**,**/.pixi/**,**/venv/**,**/__pycache__/**}'
+      "**/task_*.py",
+      "{**/node_modules/**,**/.venv/**,**/.git/**,**/.pixi/**,**/venv/**,**/__pycache__/**}",
     );
 
     // Process each task module
     for (const taskFile of taskFiles) {
-      const relativePath = path.relative(workspaceFolders[0].uri.fsPath, taskFile.fsPath);
+      const relativePath = path.relative(
+        workspaceFolders[0].uri.fsPath,
+        taskFile.fsPath,
+      );
       const dirPath = path.dirname(relativePath);
       const fileName = path.basename(taskFile.fsPath);
 
       // Create folder hierarchy
-      let currentPath = '';
+      let currentPath = "";
       let currentItems = rootItems;
       const pathParts = dirPath.split(path.sep);
 
       // Skip if it's in the root
-      if (dirPath !== '.') {
+      if (dirPath !== ".") {
         for (const part of pathParts) {
           currentPath = currentPath ? path.join(currentPath, part) : part;
-          const fullPath = path.join(workspaceFolders[0].uri.fsPath, currentPath);
+          const fullPath = path.join(
+            workspaceFolders[0].uri.fsPath,
+            currentPath,
+          );
 
           if (!currentItems.has(currentPath)) {
             const newFolder = new FolderItem(part, [], fullPath);
@@ -154,19 +163,22 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
             currentItems = new Map(
               folderItem.children
                 .filter((child) => child instanceof FolderItem)
-                .map((child) => [path.basename(child.label), child as FolderItem])
+                .map((child) => [
+                  path.basename(child.label),
+                  child as FolderItem,
+                ]),
             );
           }
         }
       }
 
       // Create module and its tasks
-      const content = fs.readFileSync(taskFile.fsPath, 'utf8');
+      const content = fs.readFileSync(taskFile.fsPath, "utf8");
       const taskItems = this.findTaskFunctions(taskFile.fsPath, content);
       const moduleItem = new ModuleItem(fileName, taskItems, taskFile.fsPath);
 
       // Add module to appropriate folder or root
-      if (dirPath === '.') {
+      if (dirPath === ".") {
         rootItems.set(fileName, moduleItem);
       } else {
         const parentFolder = rootItems.get(dirPath);
@@ -197,8 +209,8 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
     // Booleans to track if the task decorator is imported as `from pytask import task`
     // and used as `@task` or `import pytask` and used as `@pytask.task`.
     let hasTaskImport = false;
-    let taskAlias = 'task'; // default name for 'from pytask import task'
-    let pytaskAlias = 'pytask'; // default name for 'import pytask'
+    let taskAlias = "task"; // default name for 'from pytask import task'
+    let pytaskAlias = "pytask"; // default name for 'import pytask'
     let hasPytaskImport = false;
 
     // Match the import statements
@@ -208,9 +220,11 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
     // - from pytask import Product, task
     // - from pytask import (Product, task)
     const fromPytaskImport = content.match(
-      /from\s+pytask\s+import\s+(?:\(?\s*(?:[\w]+\s*,\s*)*task(?:\s+as\s+(\w+))?(?:\s*,\s*[\w]+)*\s*\)?)/
+      /from\s+pytask\s+import\s+(?:\(?\s*(?:[\w]+\s*,\s*)*task(?:\s+as\s+(\w+))?(?:\s*,\s*[\w]+)*\s*\)?)/,
     );
-    const importPytask = content.match(/import\s+pytask(?:\s+as\s+(\w+))?\s*$/m);
+    const importPytask = content.match(
+      /import\s+pytask(?:\s+as\s+(\w+))?\s*$/m,
+    );
 
     if (fromPytaskImport) {
       hasTaskImport = true;
@@ -222,19 +236,19 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
     if (importPytask) {
       hasPytaskImport = true;
       // If there's an alias (import pytask as something), use it
-      pytaskAlias = importPytask[1] || 'pytask';
+      pytaskAlias = importPytask[1] || "pytask";
     }
 
     // Find the tasks.
     const tasks: TaskItem[] = [];
-    const lines = content.split('\n');
+    const lines = content.split("\n");
 
     let isDecorated = false;
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
 
       // Check for decorators
-      if (line.startsWith('@')) {
+      if (line.startsWith("@")) {
         // Handle both @task and @pytask.task(...) patterns
         isDecorated =
           (hasTaskImport && line === `@${taskAlias}`) ||
@@ -247,7 +261,7 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
       if (funcMatch) {
         const funcName = funcMatch[1];
         // Add if it's a task_* function or has a task decorator
-        if (funcName.startsWith('task_') || isDecorated) {
+        if (funcName.startsWith("task_") || isDecorated) {
           tasks.push(new TaskItem(funcName, filePath, i + 1));
         }
         isDecorated = false; // Reset decorator flag
@@ -261,18 +275,23 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
   }
 }
 
-export function activate(context: vscode.ExtensionContext): vscode.TreeView<TreeItemType> {
+export function activate(
+  context: vscode.ExtensionContext,
+): vscode.TreeView<TreeItemType> {
   const pytaskProvider = new PyTaskProvider();
-  const treeView = vscode.window.createTreeView('pytaskExplorer', {
+  const treeView = vscode.window.createTreeView("pytaskExplorer", {
     treeDataProvider: pytaskProvider,
     showCollapseAll: true,
   });
 
   context.subscriptions.push(treeView);
 
-  const refreshCommand = vscode.commands.registerCommand('pytask.refresh', () => {
-    pytaskProvider.refresh();
-  });
+  const refreshCommand = vscode.commands.registerCommand(
+    "pytask.refresh",
+    () => {
+      pytaskProvider.refresh();
+    },
+  );
 
   context.subscriptions.push(refreshCommand, pytaskProvider);
 
