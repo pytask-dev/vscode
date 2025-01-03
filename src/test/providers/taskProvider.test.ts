@@ -109,7 +109,7 @@ def not_a_task():
         expect(emptyModule).to.exist;
         expect(emptyModule!.contextValue).to.equal(
           "module",
-          "Empty file should be shown as module"
+          "Empty file should be shown as module",
         );
 
         // Verify empty module has no tasks
