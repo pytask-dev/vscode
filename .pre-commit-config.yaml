@@ -20,10 +20,10 @@ repos:
         files: \.[jt]sx?$  # *.js, *.jsx, *.ts and *.tsx
         types: [file]
         additional_dependencies:
-          - eslint
-          - typescript
-          - '@typescript-eslint/parser'
-          - '@typescript-eslint/eslint-plugin'
+          - eslint@8.56.0
+          - '@typescript-eslint/parser@6.18.1'
+          - '@typescript-eslint/eslint-plugin@6.18.1'
+          - '@eslint/js@8.56.0'
   - repo: https://github.com/lyz-code/yamlfix
     rev: 1.17.0
     hooks:
