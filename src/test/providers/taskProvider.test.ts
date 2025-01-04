@@ -363,4 +363,22 @@ def decorated_task():  # line 8
     expect(tasks[1].label).to.equal("task_one");
     expect(tasks[1].lineNumber).to.equal(4);
   });
+
+  test("Should handle tasks that set a new name via the decorator", () => {
+    const content = `
+from pytask import task
+
+@task(name="new_name")
+def task_one():
+  pass
+
+@task(kwargs={}, name="second_new_name")
+def task_two():
+  pass
+`;
+    const tasks = provider.findTaskFunctions(dummyPath, content);
+    expect(tasks).to.have.lengthOf(2, "Should find both tasks");
+    expect(tasks[0].label).to.equal("new_name");
+    expect(tasks[1].label).to.equal("second_new_name");
+  });
 });
