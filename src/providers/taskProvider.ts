@@ -230,6 +230,7 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
     const lines = content.split("\n");
 
     let isDecorated = false;
+    let taskName: string | undefined;
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
 
@@ -237,8 +238,16 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
       if (line.startsWith("@")) {
         // Handle both @task and @pytask.task(...) patterns
         isDecorated =
-          (hasTaskImport && line === `@${taskAlias}`) ||
+          (hasTaskImport && (line === `@${taskAlias}` || line.startsWith(`@${taskAlias}(`))) ||
           (hasPytaskImport && line.startsWith(`@${pytaskAlias}.task`));
+
+        // Extract name from decorator if present
+        if (isDecorated) {
+          const nameMatch = line.match(/name\s*=\s*["']([^"']+)["']/);
+          if (nameMatch) {
+            taskName = nameMatch[1];
+          }
+        }
         continue;
       }
 
@@ -248,9 +257,10 @@ export class PyTaskProvider implements vscode.TreeDataProvider<TreeItemType> {
         const funcName = funcMatch[1];
         // Add if it's a task_* function or has a task decorator
         if (funcName.startsWith("task_") || isDecorated) {
-          tasks.push(new TaskItem(funcName, filePath, i + 1));
+          tasks.push(new TaskItem(taskName || funcName, filePath, i + 1));
         }
-        isDecorated = false; // Reset decorator flag
+        isDecorated = false;
+        taskName = undefined; // Reset task name
       }
     }
 
